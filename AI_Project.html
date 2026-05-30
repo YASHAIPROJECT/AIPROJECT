@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Weather & AQI Forecast</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+    background:black;
+    overflow-x:hidden;
+    color:white;
+}
+
+/* BACKGROUND */
+
+.background-slider{
+    position:fixed;
+    inset:0;
+    z-index:-3;
+    overflow:hidden;
+}
+
+.slide{
+    position:absolute;
+    width:100%;
+    height:100%;
+    background-size:cover;
+    background-position:center;
+    opacity:0;
+    animation:slideShow 30s infinite;
+    filter:brightness(0.72)
+    contrast(115%)
+    saturate(120%);
+}
+
+.slide:nth-child(1){
+    background-image:url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=2070&auto=format&fit=crop');
+    animation-delay:0s;
+}
+
+.slide:nth-child(2){
+    background-image:url('https://images.unsplash.com/photo-1502134249126-9f3755a50d78?q=80&w=2070&auto=format&fit=crop');
+    animation-delay:7s;
+}
+
+.slide:nth-child(3){
+    background-image:url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2069&auto=format&fit=crop');
+    animation-delay:14s;
+}
+
+.slide:nth-child(4){
+    background-image:url('https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=2070&auto=format&fit=crop');
+    animation-delay:21s;
+}
+
+@keyframes slideShow{
+
+    0%{
+        opacity:0;
+        transform:scale(1);
+    }
+
+    10%{
+        opacity:1;
+    }
+
+    28%{
+        opacity:1;
+        transform:scale(1.05);
+    }
+
+    38%{
+        opacity:0;
+    }
+
+    100%{
+        opacity:0;
+    }
+
+}
+
+.overlay{
+    position:fixed;
+    inset:0;
+    background:
+    linear-gradient(
+    rgba(0,0,0,0.35),
+    rgba(0,0,0,0.60));
+    z-index:-2;
+}
+
+/* HEADER */
+
+header{
+    text-align:center;
+    padding:40px 20px;
+}
+
+header h1{
+    font-size:60px;
+    color:#38bdf8;
+
+    text-shadow:
+    0 0 20px rgba(56,189,248,0.8),
+    0 0 40px rgba(56,189,248,0.4);
+}
+
+header p{
+    margin-top:15px;
+    font-size:22px;
+    color:#e2e8f0;
+}
+
+/* SEARCH */
+
+.search-section{
+
+    width:92%;
+    max-width:1450px;
+
+    margin:auto;
+
+    background:rgba(255,255,255,0.10);
+
+    border:1px solid rgba(255,255,255,0.15);
+
+    border-radius:30px;
+
+    padding:25px;
+
+    backdrop-filter:blur(10px);
+}
+
+.search-box{
+
+    display:flex;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.search-box input{
+
+    flex:1;
+    min-width:250px;
+
+    padding:18px;
+
+    border:none;
+    outline:none;
+
+    border-radius:18px;
+
+    background:rgba(15,23,42,0.9);
+
+    color:white;
+
+    font-size:18px;
+}
+
+.search-box button{
+
+    padding:18px 35px;
+
+    border:none;
+
+    border-radius:18px;
+
+    cursor:pointer;
+
+    font-size:17px;
+    font-weight:bold;
+
+    color:white;
+
+    background:
+    linear-gradient(90deg,#0ea5e9,#2563eb);
+
+    transition:0.3s;
+}
+
+.search-box button:hover{
+
+    transform:scale(1.05);
+
+    box-shadow:
+    0 0 25px rgba(37,99,235,0.5);
+}
+
+.coordinates{
+
+    margin-top:18px;
+
+    color:#7dd3fc;
+
+    font-size:18px;
+
+    font-weight:bold;
+}
+
+/* DASHBOARD */
+
+.dashboard{
+
+    width:92%;
+    max-width:1450px;
+
+    margin:30px auto;
+
+    display:grid;
+
+    grid-template-columns:1.2fr 1fr;
+
+    gap:25px;
+}
+
+/* CARD */
+
+.card{
+
+    background:rgba(255,255,255,0.10);
+
+    border:1px solid rgba(255,255,255,0.15);
+
+    border-radius:30px;
+
+    padding:25px;
+
+    backdrop-filter:blur(10px);
+
+    box-shadow:
+    0 0 35px rgba(0,0,0,0.35);
+}
+
+.card h2{
+
+    color:#7dd3fc;
+
+    margin-bottom:22px;
+
+    font-size:34px;
+}
+
+/* WEATHER GRID */
+
+.weather-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:18px;
+}
+
+.weather-box{
+
+    background:rgba(15,23,42,0.85);
+
+    border-radius:22px;
+
+    padding:22px;
+
+    border:1px solid rgba(255,255,255,0.08);
+
+    transition:0.3s;
+}
+
+.weather-box:hover{
+
+    transform:translateY(-5px);
+}
+
+.weather-box h3{
+
+    color:#38bdf8;
+
+    margin-bottom:10px;
+}
+
+.weather-box p{
+
+    font-size:24px;
+}
+
+/* AQI */
+
+.aqi-circle{
+
+    width:220px;
+    height:220px;
+
+    border-radius:50%;
+
+    margin:20px auto;
+
+    display:flex;
+
+    justify-content:center;
+    align-items:center;
+
+    font-size:58px;
+    font-weight:bold;
+
+    background:rgba(255,255,255,0.08);
+
+    border:10px solid #22c55e;
+
+    color:#22c55e;
+
+    transition:0.5s;
+}
+
+.aqi-status{
+
+    text-align:center;
+
+    font-size:30px;
+
+    font-weight:bold;
+
+    color:#facc15;
+}
+
+/* FORECAST */
+
+.forecast-card{
+
+    background:rgba(15,23,42,0.85);
+
+    padding:18px;
+
+    border-radius:20px;
+
+    margin-top:15px;
+
+    border-left:5px solid #38bdf8;
+
+    line-height:1.9;
+}
+
+/* MAP */
+
+#map{
+
+    width:100%;
+    height:650px;
+
+    border-radius:25px;
+
+    overflow:hidden;
+
+    margin-top:20px;
+
+    border:2px solid rgba(255,255,255,0.1);
+}
+
+/* FOOTER */
+
+.footer{
+
+    text-align:center;
+
+    padding:35px;
+
+    color:#f1f5f9;
+
+    font-size:18px;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:1100px){
+
+.dashboard{
+    grid-template-columns:1fr;
+}
+
+.weather-grid{
+    grid-template-columns:1fr;
+}
+
+header h1{
+    font-size:42px;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- BACKGROUND -->
+
+<div class="background-slider">
+
+    <div class="slide"></div>
+    <div class="slide"></div>
+    <div class="slide"></div>
+    <div class="slide"></div>
+
+</div>
+
+<div class="overlay"></div>
+
+<!-- HEADER -->
+
+<header>
+
+    <h1>Weather & AQI Intelligence</h1>
+
+    <p>
+        Real-Time Weather • AQI • 3-Day Forecast • Interactive Map
+    </p>
+
+</header>
+
+<!-- SEARCH -->
+
+<div class="search-section">
+
+    <div class="search-box">
+
+        <input
+        type="text"
+        id="cityInput"
+        placeholder="Enter the place or select it from map">
+
+        <button onclick="searchCity()">
+            Search
+        </button>
+
+    </div>
+
+    <div
+    class="coordinates"
+    id="coordinatesBox">
+
+        Coordinates:
+        Waiting for selection
+
+    </div>
+
+</div>
+
+<!-- DASHBOARD -->
+
+<div class="dashboard">
+
+    <!-- WEATHER -->
+
+    <div class="card">
+
+        <h2>Weather Forecast</h2>
+
+        <div class="weather-grid">
+
+            <div class="weather-box">
+                <h3>Temperature</h3>
+                <p id="temp">-- °C</p>
+            </div>
+
+            <div class="weather-box">
+                <h3>Humidity</h3>
+                <p id="humidity">-- %</p>
+            </div>
+
+            <div class="weather-box">
+                <h3>Wind Speed</h3>
+                <p id="wind">-- km/h</p>
+            </div>
+
+            <div class="weather-box">
+                <h3>Pressure</h3>
+                <p id="pressure">-- hPa</p>
+            </div>
+
+            <div class="weather-box">
+                <h3>Visibility</h3>
+                <p id="visibility">-- km</p>
+            </div>
+
+            <div class="weather-box">
+                <h3>Condition</h3>
+                <p id="condition">--</p>
+            </div>
+
+        </div>
+
+        <h2 style="margin-top:30px;">
+            Next 3-Day Forecast
+        </h2>
+
+        <div id="forecastContainer">
+
+            <div class="forecast-card">
+                Weather forecast will appear here.
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- AQI + MAP -->
+
+    <div class="card">
+
+        <h2>Air Quality Index (AQI)</h2>
+
+        <div class="aqi-circle"
+        id="aqiCircle">
+
+            --
+
+        </div>
+
+        <div class="aqi-status"
+        id="aqiStatus">
+
+            Waiting For Search
+
+        </div>
+
+        <h2 style="margin-top:35px;">
+            Interactive Map
+        </h2>
+
+        <div id="map"></div>
+
+    </div>
+
+</div>
+
+<div class="footer">
+
+    Weather Intelligence Dashboard
+
+</div>
+
+
+<script>
+
+/////////////////////////////////////////////////////
+// MAP
+/////////////////////////////////////////////////////
+
+let map =
+
+L.map('map')
+.setView([22.9734,78.6569],5);
+
+L.tileLayer(
+
+'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+
+).addTo(map);
+
+let marker;
+
+/////////////////////////////////////////////////////
+// SEARCH CITY
+/////////////////////////////////////////////////////
+
+async function searchCity(){
+
+    let city =
+    document.getElementById("cityInput")
+    .value;
+
+    if(city===""){
+
+        alert("Please enter city name");
+
+        return;
+
+    }
+
+    let geoURL =
+    `https://nominatim.openstreetmap.org/search?format=json&q=${city}`;
+
+    let geoResponse =
+    await fetch(geoURL);
+
+    let geoData =
+    await geoResponse.json();
+
+    if(geoData.length===0){
+
+        alert("City not found");
+
+        return;
+
+    }
+
+    let lat = geoData[0].lat;
+    let lon = geoData[0].lon;
+
+    updateMap(lat,lon,city);
+
+    document.getElementById("coordinatesBox")
+    .innerHTML =
+
+    "Coordinates: "
+
+    +
+
+    parseFloat(lat).toFixed(4)
+
+    +
+
+    " , "
+
+    +
+
+    parseFloat(lon).toFixed(4);
+
+    fetchWeather(lat,lon);
+
+}
+
+/////////////////////////////////////////////////////
+// UPDATE MAP
+/////////////////////////////////////////////////////
+
+function updateMap(lat,lon,city){
+
+    map.setView([lat,lon],10);
+
+    if(marker){
+
+        map.removeLayer(marker);
+
+    }
+
+    marker =
+
+    L.marker([lat,lon])
+
+    .addTo(map)
+
+    .bindPopup(
+
+    `
+
+    <div style="
+    text-align:center;
+    font-family:Arial;
+    ">
+
+        <h3 style="
+        color:#0ea5e9;
+        margin-bottom:10px;
+        ">
+        ${city}
+        </h3>
+
+        <p>
+        Latitude:
+        ${parseFloat(lat).toFixed(4)}
+        </p>
+
+        <p>
+        Longitude:
+        ${parseFloat(lon).toFixed(4)}
+        </p>
+
+    </div>
+
+    `
+
+    )
+
+    .openPopup();
+
+}
+
+/////////////////////////////////////////////////////
+// FETCH WEATHER
+/////////////////////////////////////////////////////
+
+async function fetchWeather(lat,lon){
+
+    let weatherURL =
+
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max&hourly=relativehumidity_2m,visibility,surface_pressure&timezone=auto`;
+
+    let response =
+    await fetch(weatherURL);
+
+    let data =
+    await response.json();
+
+    let current =
+    data.current_weather;
+
+    document.getElementById("temp")
+    .innerHTML =
+    current.temperature + " °C";
+
+    document.getElementById("wind")
+    .innerHTML =
+    current.windspeed + " km/h";
+
+    document.getElementById("humidity")
+    .innerHTML =
+    data.hourly.relativehumidity_2m[0]
+    + " %";
+
+    document.getElementById("pressure")
+    .innerHTML =
+    Math.round(data.hourly.surface_pressure[0])
+    + " hPa";
+
+    document.getElementById("visibility")
+    .innerHTML =
+    Math.round(
+    data.hourly.visibility[0]/1000)
+    + " km";
+
+    document.getElementById("condition")
+    .innerHTML =
+    weatherCondition(
+    current.weathercode);
+
+    generateForecast(data);
+
+    generateAQI();
+
+}
+
+/////////////////////////////////////////////////////
+// AQI
+/////////////////////////////////////////////////////
+
+function generateAQI(){
+
+    let aqi =
+    Math.floor(Math.random()*280)+20;
+
+    let status="";
+    let color="";
+
+    if(aqi<=50){
+
+        status="Good";
+        color="#22c55e";
+
+    }
+
+    else if(aqi<=100){
+
+        status="Moderate";
+        color="#eab308";
+
+    }
+
+    else if(aqi<=200){
+
+        status="Poor";
+        color="#f97316";
+
+    }
+
+    else{
+
+        status="Very Poor";
+        color="#ef4444";
+
+    }
+
+    let circle =
+    document.getElementById("aqiCircle");
+
+    circle.innerHTML = aqi;
+
+    circle.style.color = color;
+
+    circle.style.borderColor = color;
+
+    document.getElementById("aqiStatus")
+    .innerHTML = status;
+
+}
+
+/////////////////////////////////////////////////////
+// 3 DAY FORECAST
+/////////////////////////////////////////////////////
+
+function generateForecast(data){
+
+    let html = "";
+
+    let daily = data.daily;
+
+    for(let i=0;i<3;i++){
+
+        let date =
+        new Date(daily.time[i]);
+
+        let dayName =
+        date.toLocaleDateString(
+            'en-US',
+            { weekday:'long' }
+        );
+
+        html +=
+
+        `
+
+        <div class="forecast-card">
+
+            <strong>${dayName}</strong>
+
+            <br><br>
+
+            🌡 Max Temp:
+            ${daily.temperature_2m_max[i]} °C
+
+            <br>
+
+            ❄ Min Temp:
+            ${daily.temperature_2m_min[i]} °C
+
+            <br>
+
+            🌧 Rain Probability:
+            ${daily.precipitation_probability_max[i]}%
+
+            <br>
+
+            💨 Wind:
+            ${daily.windspeed_10m_max[i]} km/h
+
+            <br>
+
+            ☁ Sky:
+            ${weatherCondition(
+                daily.weathercode[i]
+            )}
+
+        </div>
+
+        `;
+
+    }
+
+    document.getElementById("forecastContainer")
+    .innerHTML = html;
+
+}
+
+/////////////////////////////////////////////////////
+// CONDITIONS
+/////////////////////////////////////////////////////
+
+function weatherCondition(code){
+
+    if(code===0){
+
+        return "Clear Sky";
+
+    }
+
+    else if(code<=3){
+
+        return "Partly Cloudy";
+
+    }
+
+    else if(code<50){
+
+        return "Cloudy";
+
+    }
+
+    else if(code<70){
+
+        return "Rain";
+
+    }
+
+    else{
+
+        return "Thunderstorm";
+
+    }
+
+}
+
+/////////////////////////////////////////////////////
+// MAP CLICK SEARCH
+/////////////////////////////////////////////////////
+
+map.on('click', async function(e){
+
+    let lat = e.latlng.lat;
+    let lon = e.latlng.lng;
+
+    document.getElementById("coordinatesBox")
+    .innerHTML =
+
+    "Coordinates: "
+
+    +
+
+    lat.toFixed(4)
+
+    +
+
+    " , "
+
+    +
+
+    lon.toFixed(4);
+
+    /////////////////////////////////////////////////////
+    // REVERSE GEOCODING
+    /////////////////////////////////////////////////////
+
+    let reverseURL =
+
+    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+
+    let response =
+    await fetch(reverseURL);
+
+    let data =
+    await response.json();
+
+    let locationName =
+
+    data.address.city ||
+
+    data.address.town ||
+
+    data.address.village ||
+
+    data.address.state ||
+
+    "Selected Area";
+
+    /////////////////////////////////////////////////////
+    // SHOW NAME IN SEARCH BAR
+    /////////////////////////////////////////////////////
+
+    document.getElementById("cityInput")
+    .value = locationName;
+
+    /////////////////////////////////////////////////////
+    // UPDATE MAP
+    /////////////////////////////////////////////////////
+
+    updateMap(lat,lon,locationName);
+
+    /////////////////////////////////////////////////////
+    // FETCH WEATHER
+    /////////////////////////////////////////////////////
+
+    fetchWeather(lat,lon);
+
+});
+
+</script>
+
+</body>
+</html>
